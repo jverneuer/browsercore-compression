@@ -131,6 +131,9 @@ export class NodeZlibCompressionProvider implements CompressionProvider {
                 try {
                     return this.inflate(data);
                 } catch (zlibErr) {
+                    // Only a decode failure justifies the raw-fallback: anything
+                    // else (programming error, OOM) is not a framing problem and
+                    // must surface unchanged rather than being masked by a retry.
                     if (zlibErr instanceof DecompressionError) {
                         return this.inflateRaw(data);
                     }
