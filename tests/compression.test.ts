@@ -207,6 +207,24 @@ describe("decompress (content-encoding dispatch)", () => {
         const corrupt = new Uint8Array([0x1f, 0x8b, 0x08, 0x00, 0xff, 0xff]);
         expect(() => provider.decompress(corrupt, "gzip")).toThrow(DecompressionError);
     });
+
+    it("throws DecompressionError for corrupt deflate (neither zlib nor raw framing)", () => {
+        // A stream that is neither valid zlib-wrapped nor valid raw deflate must
+        // fail BOTH the inflate attempt and the raw-inflate fallback, surfacing
+        // as a single DecompressionError rather than falling through.
+        const corrupt = new Uint8Array([0x78, 0x9c, 0xff, 0xff, 0x00, 0x00]);
+        expect(() => provider.decompress(corrupt, "deflate")).toThrow(DecompressionError);
+    });
+
+    it("throws DecompressionError for corrupt brotli", () => {
+        const corrupt = new Uint8Array([0x01, 0x02, 0x03, 0x04]);
+        expect(() => provider.decompress(corrupt, "br")).toThrow(DecompressionError);
+    });
+
+    it("throws DecompressionError for corrupt x-gzip", () => {
+        const corrupt = new Uint8Array([0x1f, 0x8b, 0x08, 0x00, 0xff, 0xff]);
+        expect(() => provider.decompress(corrupt, "x-gzip")).toThrow(DecompressionError);
+    });
 });
 
 describe("SUPPORTED_ENCODINGS", () => {

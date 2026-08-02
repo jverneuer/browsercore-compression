@@ -1,5 +1,9 @@
 # @browsercore/compression
 
+[![npm version](https://img.shields.io/npm/v/@browsercore/compression)](https://www.npmjs.com/package/@browsercore/compression)
+[![coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/jverneuer/browsercore-compression/main/coverage/badge.json)](https://github.com/jverneuer/browsercore-compression/blob/main/COVERAGE.md)
+[![lint](https://img.shields.io/github/actions/workflow/status/jverneuer/browsercore-compression/ci.yml?label=lint)](https://github.com/jverneuer/browsercore-compression/actions/workflows/ci.yml)
+
 A clean abstraction wrapping Node's native zlib APIs. HTTP layers — never
 `node:zlib` directly — call these methods so the backend is replaceable
 (WebCompressionStream, wasm brotli, test double).
