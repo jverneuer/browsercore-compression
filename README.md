@@ -4,30 +4,29 @@
 [![coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/jverneuer/browsercore-compression/main/coverage/badge.json)](https://github.com/jverneuer/browsercore-compression/blob/main/COVERAGE.md)
 [![lint](https://img.shields.io/github/actions/workflow/status/jverneuer/browsercore-compression/ci.yml?label=lint)](https://github.com/jverneuer/browsercore-compression/actions/workflows/ci.yml)
 
-A clean abstraction wrapping Node's native zlib APIs. HTTP layers — never
-`node:zlib` directly — call these methods so the backend is replaceable
-(WebCompressionStream, wasm brotli, test double).
+A clean abstraction wrapping Node's native zlib APIs. HTTP layers never import
+`node:zlib` directly — they call through this package so the backend is
+replaceable (WebCompressionStream, wasm brotli, a test double).
+
+## Install
+
+```sh
+npm install @browsercore/compression
+```
 
 ## Responsibility
 
-Provide compression primitives: gzip, deflate (zlib-wrapped + raw), and brotli
-in both directions, plus a `decompress()` helper that maps a `content-encoding`
-header token to the right decoder. All I/O-free and unit-testable.
+Compression primitives — gzip, deflate (zlib-wrapped + raw), and brotli, in both
+directions — plus a `decompress()` helper that maps a `content-encoding` header
+token to the right decoder. All operations are synchronous and I/O-free, which
+keeps them unit-testable.
 
 The `decompress()` helper implements browser-tolerant `deflate` decoding: it
 tries the RFC-mandated zlib-wrapped form first and falls back to raw inflate,
 because servers disagree on framing and browsers tolerate both.
 
-## What it does NOT know about
-
-- HTTP requests, responses, or `content-encoding` negotiation policy
-- TLS, transport, or sockets
-- Browser profiles or cookies
-
-Higher layers compose exclusively through the `CompressionProvider` interface.
-The production HTTP implementations **never** call `node:zlib` directly — they
-call `compression.gzip(...)`, `compression.decompress(...)`, etc. This makes the
-backend swappable.
+Higher layers compose exclusively through the `CompressionProvider` interface;
+the production HTTP implementations **never** call `node:zlib` directly.
 
 ## Public API
 
@@ -40,7 +39,7 @@ import {
 
 // Use the default singleton (backed by node:zlib):
 const compressed = compression.gzip(body);
-const plain = compression.decompress(body, headers.get("content-encoding")!);
+const plain = compression.decompress(body, headers.get("content-encoding") ?? "");
 
 // Or inject a custom provider (e.g. for tests):
 const provider: CompressionProvider = new NodeZlibCompressionProvider();
@@ -51,14 +50,16 @@ const encoded = provider.brotliCompress(body);
 
 | Export | Kind | Purpose |
 | --- | --- | --- |
+| `compression` | singleton | Default `node:zlib`-backed backend higher layers call into |
+| `NodeZlibCompressionProvider` | class | `node:zlib`-backed implementation of the provider interface |
 | `CompressionProvider` | interface | Pure compression primitive abstraction higher layers depend on |
-| `NodeZlibCompressionProvider` | class | `node:zlib`-backed implementation |
-| `compression` | singleton | Default backend higher layers call into |
 | `ContentEncoding` | literal union | `gzip \| deflate \| br \| identity` |
-| `SUPPORTED_ENCODINGS` | const array | Runtime list of supported tokens |
-| `CompressionError` | class | Base typed error |
-| `UnsupportedEncodingError` | class | Unrecognized content-encoding token |
-| `DecompressionError` | class | Corrupt / truncated stream |
+| `SUPPORTED_ENCODINGS` | const array | Runtime list of supported tokens (includes the no-op `identity`) |
+| `CompressionError` | class | Base typed error; provides `cause` |
+| `UnsupportedEncodingError` | class | Unrecognized `content-encoding` token |
+| `DecompressionError` | class | Corrupt / truncated / wrongly-framed stream |
+| `ensureCompressionError()` | function | Wrap a thrown value as a typed error (passes through existing ones) |
+| `assertNever()` | function | Exhaustiveness check for discriminated unions |
 
 ## Dependency graph
 
@@ -68,3 +69,7 @@ const encoded = provider.brotliCompress(body);
 ```
 
 No other `@browsercore/*` packages are imported.
+
+## License
+
+MIT
