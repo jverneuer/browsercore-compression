@@ -18,16 +18,49 @@ import {
     brotliCompressSync,
     brotliDecompressSync,
 } from "node:zlib";
-import type { CompressionProvider } from "./types.js";
+import type { CompressionProvider, ContentEncoding } from "./types.js";
 import { DecompressionError, UnsupportedEncodingError, ensureCompressionError } from "./errors.js";
+import { assertNever } from "./utils.js";
 
 /**
- * Normalize a zlib decoder's output to a fresh `Uint8Array`. The sync zlib
- * APIs return a Node `Buffer` (a `Uint8Array` subclass); callers outside this
- * package consume plain `Uint8Array`, so we canonicalize here at the boundary.
+ * The native zlib backend's output: a Node `Buffer` (a `Uint8Array` subclass)
+ * or a plain `Uint8Array`. Callers outside this package consume plain
+ * `Uint8Array`, so we canonicalize at the boundary.
  */
-function toUint8Array(data: Uint8Array | Buffer): Uint8Array {
+type ZlibOutput = Uint8Array | Buffer;
+
+/**
+ * Normalize a zlib backend's output to a fresh `Uint8Array`, detaching it from
+ * any underlying `Buffer` pool. Canonicalizes here at the boundary so callers
+ * never see a Node `Buffer`.
+ */
+function toUint8Array(data: ZlibOutput): Uint8Array {
     return new Uint8Array(data);
+}
+
+/**
+ * Parse a free-form `content-encoding` header value into a known
+ * {@link ContentEncoding}. Browser-tolerant: case-insensitive, trims
+ * whitespace, treats `x-gzip` as gzip and the empty token as identity.
+ *
+ * Returns `null` for an unrecognized token — the caller is responsible for
+ * surfacing that as an {@link UnsupportedEncodingError}.
+ */
+function parseEncoding(encoding: string): ContentEncoding | null {
+    switch (encoding.trim().toLowerCase()) {
+        case "gzip":
+        case "x-gzip":
+            return "gzip";
+        case "deflate":
+            return "deflate";
+        case "br":
+            return "br";
+        case "identity":
+        case "":
+            return "identity";
+        default:
+            return null;
+    }
 }
 
 /**
@@ -36,9 +69,9 @@ function toUint8Array(data: Uint8Array | Buffer): Uint8Array {
  * opaque error on `cause` without leaking it into the public API.
  */
 function decodeWith(
-    fn: (b: Uint8Array) => Uint8Array | Buffer,
+    fn: (b: Uint8Array) => ZlibOutput,
     data: Uint8Array,
-    encoding: string,
+    encoding: ContentEncoding,
 ): Uint8Array {
     try {
         return toUint8Array(fn(data));
@@ -84,12 +117,12 @@ export class NodeZlibCompressionProvider implements CompressionProvider {
     }
 
     public decompress(data: Uint8Array, encoding: string): Uint8Array {
-        // Normalize the token once; content-encoding is case-insensitive and
-        // may carry surrounding whitespace or parameters (e.g. "gzip ").
-        const token = encoding.trim().toLowerCase();
-        switch (token) {
+        const parsed = parseEncoding(encoding);
+        if (parsed === null) {
+            throw new UnsupportedEncodingError(encoding);
+        }
+        switch (parsed) {
             case "gzip":
-            case "x-gzip":
                 return this.gunzip(data);
             case "deflate": {
                 // Servers disagree on framing: some send a zlib-wrapped stream
@@ -107,10 +140,12 @@ export class NodeZlibCompressionProvider implements CompressionProvider {
             case "br":
                 return this.brotliDecompress(data);
             case "identity":
-            case "":
                 return data;
             default:
-                throw new UnsupportedEncodingError(encoding);
+                // `parsed` is a `ContentEncoding`; every variant is handled above.
+                // Adding a new member to that union makes this line compile-error
+                // until a case is added here.
+                return assertNever(parsed);
         }
     }
 }
