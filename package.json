@@ -1,6 +1,6 @@
 {
   "name": "@browsercore/compression",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Clean abstraction wrapping Node's native zlib APIs (gzip, deflate, brotli). HTTP layers call these methods — never node:zlib directly — so the backend is replaceable.",
   "repository": {
     "type": "git",
