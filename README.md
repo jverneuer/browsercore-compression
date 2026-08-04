@@ -61,6 +61,22 @@ const encoded = provider.brotliCompress(body);
 | `ensureCompressionError()` | function | Wrap a thrown value as a typed error (passes through existing ones) |
 | `assertNever()` | function | Exhaustiveness check for discriminated unions |
 
+## Development
+
+This package shares its toolchain with the rest of the `@browsercore/*` stack
+via [`@browsercore/dev`](https://github.com/jverneuer/browsercore-dev): the
+base `tsconfig`, the oxlint rules, and the `definePackageConfig()` helper that
+produces this package's `vitest.config.ts`. All commands run from this directory:
+
+```sh
+npm run build      # tsc -p tsconfig.build.json (emit to dist/)
+npm run typecheck  # tsc -p tsconfig.json --noEmit (type-check only, no emit)
+npm run lint       # oxlint --type-aware src/
+npm test           # vitest run
+```
+
+Requires Node >= 26. ESM only (`"type": "module"`).
+
 ## Dependency graph
 
 ```
@@ -68,7 +84,8 @@ const encoded = provider.brotliCompress(body);
   └─ node:zlib
 ```
 
-No other `@browsercore/*` packages are imported.
+`@browsercore/dev` is a devDependency only (shared config) — it ships no
+runtime code. No other `@browsercore/*` packages are imported at runtime.
 
 ## License
 
