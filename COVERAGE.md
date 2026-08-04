@@ -1,6 +1,6 @@
 # Coverage report
 
-Generated from `coverage-summary.json` by `scripts/coverage-md.mjs`.
+Generated from `coverage-summary.json` by `coverage-md` (@browsercore/dev).
 
 ## Total
 
@@ -17,6 +17,5 @@ Generated from `coverage-summary.json` by `scripts/coverage-md.mjs`.
 | --- | --- | --- | --- | --- |
 | `src/compression.ts` | 97.14% (34/35) | 93.75% (15/16) | 100% (15/15) | 96.77% (30/31) |
 | `src/errors.ts` | 100% (15/15) | 100% (6/6) | 100% (5/5) | 100% (15/15) |
-| `src/index.ts` | 0% (0/0) | 0% (0/0) | 0% (0/0) | 0% (0/0) |
 | `src/types.ts` | 100% (1/1) | 100% (0/0) | 100% (0/0) | 100% (1/1) |
 | `src/utils.ts` | 100% (1/1) | 100% (0/0) | 100% (1/1) | 100% (1/1) |
