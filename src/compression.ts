@@ -7,6 +7,9 @@
  *
  * All operations are synchronous and I/O-free, which keeps them unit-testable.
  * Every method takes and returns `Uint8Array` — never Node `Buffer`.
+ *
+ * @module
+ * @since 0.1.0
  */
 
 import {
@@ -30,9 +33,13 @@ import { assertNever } from "./utils.js";
 type ZlibOutput = Uint8Array | Buffer;
 
 /**
- * Normalize a zlib backend's output to a fresh `Uint8Array`, detaching it from
- * any underlying `Buffer` pool. Canonicalizes here at the boundary so callers
- * never see a Node `Buffer`.
+ * Normalize a zlib backend's output to a fresh `Uint8Array`.
+ *
+ * Detaches the result from any underlying `Buffer` pool. Canonicalizes here
+ * at the boundary so callers never see a Node `Buffer`.
+ *
+ * @param data The zlib backend's output.
+ * @returns A fresh `Uint8Array` copy.
  */
 function toUint8Array(data: ZlibOutput): Uint8Array {
     return new Uint8Array(data);
@@ -40,11 +47,13 @@ function toUint8Array(data: ZlibOutput): Uint8Array {
 
 /**
  * Parse a free-form `content-encoding` header value into a known
- * {@link ContentEncoding}. Browser-tolerant: case-insensitive, trims
- * whitespace, treats `x-gzip` as gzip and the empty token as identity.
+ * {@link ContentEncoding}.
  *
- * Returns `null` for an unrecognized token — the caller is responsible for
- * surfacing that as an {@link UnsupportedEncodingError}.
+ * Browser-tolerant: case-insensitive, trims whitespace, treats `x-gzip` as
+ * gzip and the empty token as identity.
+ *
+ * @param encoding The raw `Content-Encoding` header value.
+ * @returns The matched {@link ContentEncoding}, or `null` for an unrecognized token.
  */
 function parseEncoding(encoding: string): ContentEncoding | null {
     switch (encoding.trim().toLowerCase()) {
@@ -65,8 +74,16 @@ function parseEncoding(encoding: string): ContentEncoding | null {
 
 /**
  * Run a zlib sync decoder and wrap any failure as a typed
- * {@link DecompressionError} for the given encoding. Keeps the backend's
- * opaque error on `cause` without leaking it into the public API.
+ * {@link DecompressionError} for the given encoding.
+ *
+ * Keeps the backend's opaque error on `cause` without leaking it into the
+ * public API.
+ *
+ * @param fn       The zlib decoder function to run.
+ * @param data     Compressed bytes to decode.
+ * @param encoding The content-encoding token (for the error wrapper).
+ * @returns Decompressed bytes.
+ * @throws {@link DecompressionError} on a corrupt or truncated stream.
  */
 function decodeWith(
     fn: (b: Uint8Array) => ZlibOutput,
@@ -86,36 +103,52 @@ function decodeWith(
  * The production HTTP layers call the default singleton (`compression`) — they
  * never construct this class directly. Tests inject a fake provider through
  * the `CompressionProvider` interface.
+ *
+ * @example
+ * ```ts
+ * import { compression } from "@browsercore/compression";
+ * const decompressed = compression.decompress(responseBytes, "br");
+ * ```
+ *
+ * @since 0.1.0
  */
 export class NodeZlibCompressionProvider implements CompressionProvider {
+    /** {@inheritDoc CompressionProvider.gzip} */
     public gzip(data: Uint8Array): Uint8Array {
         return toUint8Array(gzipSync(data));
     }
 
+    /** {@inheritDoc CompressionProvider.gunzip} */
     public gunzip(data: Uint8Array): Uint8Array {
         return decodeWith((b) => gunzipSync(b), data, "gzip");
     }
 
+    /** {@inheritDoc CompressionProvider.deflate} */
     public deflate(data: Uint8Array): Uint8Array {
         return toUint8Array(deflateSync(data));
     }
 
+    /** {@inheritDoc CompressionProvider.inflate} */
     public inflate(data: Uint8Array): Uint8Array {
         return decodeWith((b) => inflateSync(b), data, "deflate");
     }
 
+    /** {@inheritDoc CompressionProvider.inflateRaw} */
     public inflateRaw(data: Uint8Array): Uint8Array {
         return decodeWith((b) => inflateRawSync(b), data, "deflate");
     }
 
+    /** {@inheritDoc CompressionProvider.brotliCompress} */
     public brotliCompress(data: Uint8Array): Uint8Array {
         return toUint8Array(brotliCompressSync(data));
     }
 
+    /** {@inheritDoc CompressionProvider.brotliDecompress} */
     public brotliDecompress(data: Uint8Array): Uint8Array {
         return decodeWith((b) => brotliDecompressSync(b), data, "br");
     }
 
+    /** {@inheritDoc CompressionProvider.decompress} */
     public decompress(data: Uint8Array, encoding: string): Uint8Array {
         const parsed = parseEncoding(encoding);
         if (parsed === null) {
@@ -154,7 +187,17 @@ export class NodeZlibCompressionProvider implements CompressionProvider {
 }
 
 /**
- * Default compression backend HTTP layers call into. Backed by `node:zlib`.
- * Replaceable for tests or alternative runtimes.
+ * Default compression backend HTTP layers call into.
+ *
+ * Backed by `node:zlib`. Replaceable for tests or alternative runtimes by
+ * constructing a different {@link CompressionProvider} implementation.
+ *
+ * @example
+ * ```ts
+ * import { compression } from "@browsercore/compression";
+ * const compressed = compression.gzip(new TextEncoder().encode("hello"));
+ * ```
+ *
+ * @since 0.1.0
  */
 export const compression = new NodeZlibCompressionProvider();
