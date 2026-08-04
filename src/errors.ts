@@ -1,3 +1,5 @@
+import type { CompressionErrorOptions } from "./types.js";
+
 /**
  * Typed errors for @browsercore/compression.
  *
@@ -9,7 +11,7 @@
 export class CompressionError extends Error {
     public override readonly cause: Error | undefined;
 
-    constructor(message: string, options?: { cause?: Error }) {
+    constructor(message: string, options?: CompressionErrorOptions) {
         super(message, options);
         this.name = new.target.name;
         this.cause = options?.cause;
@@ -25,7 +27,7 @@ export class UnsupportedEncodingError extends CompressionError {
     /** The unsupported content-encoding token. */
     public readonly encoding: string;
 
-    constructor(encoding: string, options?: { cause?: Error }) {
+    constructor(encoding: string, options?: CompressionErrorOptions) {
         super(`Unsupported content-encoding: ${encoding}`, options);
         this.encoding = encoding;
     }
@@ -41,7 +43,7 @@ export class DecompressionError extends CompressionError {
     /** The content-encoding token being decoded when the failure happened. */
     public readonly encoding: string;
 
-    constructor(encoding: string, options?: { cause?: Error }) {
+    constructor(encoding: string, options?: CompressionErrorOptions) {
         super(`Failed to decompress ${encoding} stream`, options);
         this.encoding = encoding;
     }
