@@ -27,11 +27,28 @@ jobs:
       - run: npm run typecheck
       - run: npm run lint -- --deny-warnings
       - run: npm test -- --coverage
-      - name: Enforce >=90% line coverage
-        run: |
-          node -e "const t=require('./coverage/coverage-summary.json').total;const p=t.lines.pct;if(p<90){console.error('Line coverage '+p+'% < 90% threshold');process.exit(1)}console.log('Line coverage '+p+'% >= 90% OK')"
       - name: Generate COVERAGE.md
         run: node scripts/coverage-md.mjs
+      - name: Enforce >=94% coverage (all metrics)
+        run: |
+          node -e "
+          const MINIMUM=94;
+          const t=require('./coverage/coverage-summary.json').total;
+          const metrics=[
+            ['statements',t.statements.pct],
+            ['branches',t.branches.pct],
+            ['functions',t.functions.pct],
+            ['lines',t.lines.pct],
+          ];
+          let ok=true;
+          for(const [name,pct] of metrics){
+            const pass=pct>=MINIMUM;
+            if(!pass) ok=false;
+            console.log((pass?'PASS':'FAIL')+' '+name+' '+pct+'% '+(pass?'>=':'<')+' '+MINIMUM+'%');
+          }
+          if(!ok){console.error('Coverage gate failed: one or more metrics below '+MINIMUM+'%');process.exit(1);}
+          console.log('All coverage metrics >= '+MINIMUM+'% OK');
+          "
       - run: npm run build
 
       # Determine whether this push changed the package version vs. the previous
