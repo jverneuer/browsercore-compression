@@ -2,6 +2,8 @@ name: CI
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - 'docs/**'
   pull_request:
     branches: [main]
 jobs:
@@ -25,31 +27,33 @@ jobs:
           node-version: 26
           registry-url: https://registry.npmjs.org
       - run: npm install
+      - name: Enforce no console.log in src/
+        run: |
+          VIOLATIONS=$(grep -rnE 'console\.(log|warn|error)\(' src/ || true)
+          if [ -n "$VIOLATIONS" ]; then
+            echo "ERROR: console.log/warn/error found in src/. Use injected Logger instead."
+            echo "$VIOLATIONS"
+            exit 1
+          fi
+          echo "No console.log in src/: OK"
       - run: npm run typecheck
       - run: npm run lint -- --deny-warnings
       - run: npm test -- --coverage
-      - name: Generate COVERAGE.md
-        run: npx coverage-md
-      - name: Enforce >=94% coverage (all metrics)
+      - name: Enforce >=94% coverage (statements, branches, functions, lines)
         run: |
           node -e "
-          const MINIMUM=94;
-          const t=require('./coverage/coverage-summary.json').total;
-          const metrics=[
-            ['statements',t.statements.pct],
-            ['branches',t.branches.pct],
-            ['functions',t.functions.pct],
-            ['lines',t.lines.pct],
-          ];
-          let ok=true;
-          for(const [name,pct] of metrics){
-            const pass=pct>=MINIMUM;
-            if(!pass) ok=false;
-            console.log((pass?'PASS':'FAIL')+' '+name+' '+pct+'% '+(pass?'>=':'<')+' '+MINIMUM+'%');
+          const t = require('./coverage/coverage-summary.json').total;
+          const min = 94;
+          const failed = [['statements',t.statements.pct],['branches',t.branches.pct],['functions',t.functions.pct],['lines',t.lines.pct]].filter(([,p])=>p<min);
+          if (failed.length) {
+            console.error('Coverage below '+min+'% threshold:');
+            for (const [k,p] of failed) console.error('  '+k+' '+p+'% < '+min+'%');
+            process.exit(1);
           }
-          if(!ok){console.error('Coverage gate failed: one or more metrics below '+MINIMUM+'%');process.exit(1);}
-          console.log('All coverage metrics >= '+MINIMUM+'% OK');
+          console.log('Coverage OK — statements '+t.statements.pct+'%, branches '+t.branches.pct+'%, functions '+t.functions.pct+'%, lines '+t.lines.pct+'% >= '+min+'%');
           "
+      - name: Generate COVERAGE.md
+        run: npx coverage-md
       - run: npm run build
 
       # --- QA verification (automated test-plan checklist) ---
