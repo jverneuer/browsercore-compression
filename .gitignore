@@ -1,8 +1,5 @@
-node_modules/
-dist/
-*.tsbuildinfo
-coverage/
-*.log
-.DS_Store
-COVERAGE.md
+docs/
 package-lock.json
+node_modules/
+coverage/
+index.html
