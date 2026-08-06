@@ -70,6 +70,18 @@ const encoded = provider.brotliCompress(body);
 
 No other `@browsercore/*` packages are imported.
 
+## Position in BrowserCore
+
+```
+   @browsercore/http1 / @browsercore/http2 / @browsercore/http3
+      │
+   @browsercore/compression
+      │
+   node:zlib
+```
+
+Every higher networking layer communicates with the network exclusively through the layers below it.
+
 ## License
 
 MIT
