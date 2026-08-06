@@ -10,6 +10,11 @@
  * bare `string`, so exhaustiveness can be checked at compile time.
  */
 
+/** Options for {@link CompressionError} and its subclasses. */
+export interface CompressionErrorOptions {
+    readonly cause?: Error;
+}
+
 /** Content-encoding tokens we can decode — literal union, never bare `string`. */
 export type ContentEncoding = "gzip" | "deflate" | "br" | "identity";
 
