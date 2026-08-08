@@ -2,8 +2,8 @@
  * @browsercore/compression — public API surface.
  *
  * A clean abstraction wrapping compression primitives. HTTP layers — never
- * `node:zlib` directly — call these methods so the backend is replaceable
- * (WebCompressionStream, wasm brotli, test double).
+ * a specific backend directly — call these methods so the implementation is
+ * replaceable (WebCompressionStream, wasm brotli, test double).
  *
  * The Node-backed implementation (NodeZlibCompressionProvider) lives in
  * `browsersmith/src/platform/compression/node/` — this package exports

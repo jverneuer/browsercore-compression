@@ -1,9 +1,13 @@
 /**
  * Domain types for @browsercore/compression.
  *
- * A clean abstraction wrapping Node's native zlib APIs. HTTP layers — never
- * `node:zlib` directly — call these methods so the backend is replaceable
- * (WebCompressionStream, a test double, a wasm brotli impl).
+ * A clean abstraction wrapping compression primitives. HTTP layers — never
+ * a specific backend directly — call these methods so the implementation is
+ * replaceable (WebCompressionStream, a test double, a wasm brotli impl).
+ *
+ * The Node-backed implementation (NodeZlibCompressionProvider) lives in
+ * `browsersmith/src/platform/compression/node/` — this package exports
+ * only pure types, errors, and utilities with zero `node:*` imports.
  *
  * The `ContentEncoding` union is the set of content-encoding tokens this
  * package knows how to decode. It is intentionally a literal union, never a
