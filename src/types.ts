@@ -68,5 +68,5 @@ export interface CompressionProvider {
      * @throws {UnsupportedEncodingError} on an unrecognized encoding token.
      * @throws {DecompressionError} on a corrupt or truncated stream.
      */
-    decompress(data: Uint8Array, encoding: string): Uint8Array;
+    decompress(data: Uint8Array, encoding: ContentEncoding): Uint8Array;
 }
