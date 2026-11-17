@@ -1,8 +1,9 @@
 # @browsercore/compression
 
 [![npm version](https://img.shields.io/npm/v/@browsercore/compression)](https://www.npmjs.com/package/@browsercore/compression)
-[![coverage](https://img.shields.io/endpoint?url=https://jverneuer.github.io/browsercore-compression/badge.json)](https://github.com/jverneuer/browsercore-compression/blob/main/COVERAGE.md)
-[![lint](https://img.shields.io/github/actions/workflow/status/jverneuer/browsercore-compression/ci.yml?label=lint)](https://github.com/jverneuer/browsercore-compression/actions/workflows/ci.yml)
+[![coverage](https://img.shields.io/endpoint?url=https://jverneuer.github.io/browsercore-compression/badge.json)](https://jverneuer.github.io/browsercore-compression/COVERAGE.md)
+[![CI](https://img.shields.io/github/actions/workflow/status/jverneuer/browsercore-compression/ci.yml?label=ci)](https://github.com/jverneuer/browsercore-compression/actions/workflows/ci.yml)
+[![license](https://img.shields.io/npm/l/@browsercore/compression.svg)](LICENSE)
 
 The synchronous `CompressionProvider` contract for the browsercore stack:
 gzip, deflate (zlib-wrapped + raw), and brotli in both directions, plus typed
