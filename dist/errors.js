@@ -7,6 +7,11 @@
 /** Base class for all compression errors. Provides `cause` + constructor. */
 export class CompressionError extends Error {
     cause;
+    /**
+     * The content-encoding token involved in the failure, when known.
+     * Subclasses that carry the encoding by definition set it to a string.
+     */
+    encoding;
     constructor(message, options) {
         super(message, options);
         this.name = new.target.name;
@@ -19,7 +24,7 @@ export class CompressionError extends Error {
  */
 export class UnsupportedEncodingError extends CompressionError {
     kind = "UnsupportedEncodingError";
-    /** The unsupported content-encoding token. */
+    /** The unsupported content-encoding token — always known, by definition. */
     encoding;
     constructor(encoding, options) {
         super(`Unsupported content-encoding: ${encoding}`, options);
@@ -33,10 +38,10 @@ export class UnsupportedEncodingError extends CompressionError {
  */
 export class DecompressionError extends CompressionError {
     kind = "DecompressionError";
-    /** The content-encoding token being decoded when the failure happened. */
+    /** The content-encoding token being decoded when the failure happened; undefined when unknown. */
     encoding;
     constructor(encoding, options) {
-        super(`Failed to decompress ${encoding} stream`, options);
+        super(`Failed to decompress ${encoding ?? "unknown"} stream`, options);
         this.encoding = encoding;
     }
 }
@@ -52,8 +57,9 @@ export function toError(e) {
 }
 /**
  * Wrap an unknown thrown value as a typed {@link DecompressionError} for the
- * given encoding. Passes through any existing {@link CompressionError} so
- * double-wrapping never happens.
+ * given encoding, or with an unknown encoding when none is supplied. Passes
+ * through any existing {@link CompressionError} so double-wrapping never
+ * happens.
  */
 export function ensureCompressionError(e, encoding) {
     if (e instanceof CompressionError) {

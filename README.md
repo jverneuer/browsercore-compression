@@ -8,19 +8,19 @@
 The synchronous `CompressionProvider` contract for the browsercore stack:
 gzip, deflate (zlib-wrapped + raw), and brotli in both directions, plus typed
 errors and the `content-encoding` token set. HTTP layers never import
-`node:zlib` directly — they call through this interface.
+`node:zlib` directly, they call through this interface.
 
 **The interface is synchronous by design.** Any *synchronous* backend can
 implement it: the `node:zlib` adapter wired in
 [browsersmith](https://github.com/jverneuer/browsersmith)
 (`src/platform/compression/node/`), a wasm build with sync exports, or a test
-double. Async-native streaming APIs — `CompressionStream` /
-`DecompressionStream` (a.k.a. WebCompressionStream) — **cannot** implement it:
+double. Async-native streaming APIs (`CompressionStream` /
+`DecompressionStream`, a.k.a. WebCompressionStream) **cannot** implement it:
 a Promise-based streaming API cannot be served from a sync method signature.
-The canonical rationale lives in the design-decisions note shipped with
+Why sync? Because a Promise per compressed record would wreck the per-packet math. The canonical rationale lives in the design-decisions note shipped with
 [`@browsercore/contracts` ≥ 0.2.6](https://github.com/jverneuer/browsercore-contracts/blob/main/docs/design-decisions.md).
 
-This package exports only the contract, tokens, typed errors, and utilities —
+This package exports only the contract, tokens, typed errors, and utilities.
 zero `node:*` imports. The concrete `NodeZlibCompressionProvider` is wired in
 the browsersmith adapter.
 
@@ -32,8 +32,8 @@ npm install @browsercore/compression
 
 ## Responsibility
 
-The `CompressionProvider` interface covers compression primitives — gzip,
-deflate (zlib-wrapped + raw), and brotli, in both directions — plus a
+The `CompressionProvider` interface covers compression primitives (gzip,
+deflate zlib-wrapped + raw, and brotli) in both directions, plus a
 `decompress()` method that maps a `content-encoding` header token to the right
 decoder. All operations are synchronous and I/O-free, which keeps
 implementations unit-testable.
@@ -43,7 +43,7 @@ RFC-mandated zlib-wrapped form first and fall back to raw inflate, because
 servers disagree on framing and browsers tolerate both.
 
 Higher layers compose exclusively through the `CompressionProvider` interface;
-the production HTTP implementations **never** call `node:zlib` directly —
+the production HTTP implementations **never** call `node:zlib` directly,
 browsersmith injects the adapter.
 
 ## Public API
@@ -51,7 +51,7 @@ browsersmith injects the adapter.
 ```ts
 import type { CompressionProvider } from "@browsercore/compression";
 
-// Implement the sync contract with any SYNC backend — e.g. browsersmith's
+// Implement the sync contract with any SYNC backend, e.g. browsersmith's
 // node:zlib adapter, a wasm build with sync exports, or a test double.
 // Async-native CompressionStream/DecompressionStream cannot implement it:
 const provider: CompressionProvider = mySyncProvider;
@@ -76,7 +76,7 @@ const plain = provider.decompress(body, "gzip");
 
 ```
 @browsercore/compression
-  (no runtime dependencies — zero node:* imports)
+  (no runtime dependencies, zero node:* imports)
 ```
 
 The `node:zlib` implementation (`NodeZlibCompressionProvider`) lives in the
@@ -87,7 +87,7 @@ browsersmith adapter, not in this package.
 ```
    @browsercore/http1 / @browsercore/http2 / @browsercore/http3
       │
-   @browsercore/compression   (contract — sync, I/O-free)
+   @browsercore/compression   (contract, sync, I/O-free)
       ▲
    browsersmith adapter ── node:zlib
 ```
@@ -97,7 +97,7 @@ Every higher networking layer communicates with the network exclusively through 
 
 ## Contributing
 
-Contributions are welcome — bug reports, reproductions, docs and code alike. Start with [CONTRIBUTING.md](CONTRIBUTING.md); the full guide lives in the [browsersmith repo](https://github.com/jverneuer/browsersmith/blob/main/CONTRIBUTING.md). First timer? Check the [`good first issue`](https://github.com/jverneuer/browsercore-compression/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) label. Security issues: [SECURITY.md](SECURITY.md), never a public issue.
+Contributions are welcome: bug reports, reproductions, docs and code alike. Start with [CONTRIBUTING.md](CONTRIBUTING.md); the full guide lives in the [browsersmith repo](https://github.com/jverneuer/browsersmith/blob/main/CONTRIBUTING.md). First timer? Check the [`good first issue`](https://github.com/jverneuer/browsercore-compression/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) label. Security issues: [SECURITY.md](SECURITY.md), never a public issue.
 
 ## License
 
