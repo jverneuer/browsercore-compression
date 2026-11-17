@@ -1,9 +1,17 @@
 /**
  * Domain types for @browsercore/compression.
  *
- * A clean abstraction wrapping Node's native zlib APIs. HTTP layers — never
- * `node:zlib` directly — call these methods so the backend is replaceable
- * (WebCompressionStream, a test double, a wasm brotli impl).
+ * A clean abstraction covering compression primitives. HTTP layers — never
+ * a specific backend directly — call these methods so the implementation is
+ * replaceable by any *synchronous* backend (the node:zlib adapter in
+ * browsersmith, a wasm build with sync exports, a test double). The contract
+ * is sync by design, so async-native APIs (CompressionStream /
+ * DecompressionStream) cannot implement it — see the design-decisions note
+ * in @browsercore/contracts >= 0.2.6.
+ *
+ * The Node-backed implementation (NodeZlibCompressionProvider) lives in
+ * `browsersmith/src/platform/compression/node/` — this package exports
+ * only pure types, errors, and utilities with zero `node:*` imports.
  *
  * The `ContentEncoding` union is the set of content-encoding tokens this
  * package knows how to decode. It is intentionally a literal union, never a
@@ -23,9 +31,12 @@ export declare const SUPPORTED_ENCODINGS: readonly ContentEncoding[];
 /**
  * Pure compression primitive abstraction HTTP layers depend on.
  *
- * Every method takes and returns `Uint8Array` — never Node `Buffer` — so the
- * interface is portable across backends. All operations are synchronous and
- * I/O-free, which keeps them unit-testable.
+ * Every method takes and returns `Uint8Array` — never Node `Buffer`. All
+ * operations are synchronous and I/O-free, which keeps them unit-testable —
+ * and restricts implementations to sync backends. Async-native streaming
+ * APIs (WebCompressionStream — CompressionStream/DecompressionStream)
+ * cannot implement this interface. Canonical rationale:
+ * @browsercore/contracts >= 0.2.6 (docs/design-decisions.md).
  */
 export interface CompressionProvider {
     /** Compress `data` with gzip. */
@@ -55,6 +66,6 @@ export interface CompressionProvider {
      * @throws {UnsupportedEncodingError} on an unrecognized encoding token.
      * @throws {DecompressionError} on a corrupt or truncated stream.
      */
-    decompress(data: Uint8Array, encoding: string): Uint8Array;
+    decompress(data: Uint8Array, encoding: ContentEncoding): Uint8Array;
 }
 //# sourceMappingURL=types.d.ts.map

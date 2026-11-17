@@ -1,9 +1,13 @@
 /**
  * Domain types for @browsercore/compression.
  *
- * A clean abstraction wrapping compression primitives. HTTP layers — never
+ * A clean abstraction covering compression primitives. HTTP layers — never
  * a specific backend directly — call these methods so the implementation is
- * replaceable (WebCompressionStream, a test double, a wasm brotli impl).
+ * replaceable by any *synchronous* backend (the node:zlib adapter in
+ * browsersmith, a wasm build with sync exports, a test double). The contract
+ * is sync by design, so async-native APIs (CompressionStream /
+ * DecompressionStream) cannot implement it — see the design-decisions note
+ * in @browsercore/contracts >= 0.2.6.
  *
  * The Node-backed implementation (NodeZlibCompressionProvider) lives in
  * `browsersmith/src/platform/compression/node/` — this package exports
@@ -36,9 +40,12 @@ export const SUPPORTED_ENCODINGS: readonly ContentEncoding[] = [
 /**
  * Pure compression primitive abstraction HTTP layers depend on.
  *
- * Every method takes and returns `Uint8Array` — never Node `Buffer` — so the
- * interface is portable across backends. All operations are synchronous and
- * I/O-free, which keeps them unit-testable.
+ * Every method takes and returns `Uint8Array` — never Node `Buffer`. All
+ * operations are synchronous and I/O-free, which keeps them unit-testable —
+ * and restricts implementations to sync backends. Async-native streaming
+ * APIs (WebCompressionStream — CompressionStream/DecompressionStream)
+ * cannot implement this interface. Canonical rationale:
+ * @browsercore/contracts >= 0.2.6 (docs/design-decisions.md).
  */
 export interface CompressionProvider {
     /** Compress `data` with gzip. */
