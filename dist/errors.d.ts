@@ -8,6 +8,11 @@ import type { CompressionErrorOptions } from "./types.js";
 /** Base class for all compression errors. Provides `cause` + constructor. */
 export declare class CompressionError extends Error {
     readonly cause: Error | undefined;
+    /**
+     * The content-encoding token involved in the failure, when known.
+     * Subclasses that carry the encoding by definition set it to a string.
+     */
+    readonly encoding?: string | undefined;
     constructor(message: string, options?: CompressionErrorOptions);
 }
 /**
@@ -16,7 +21,7 @@ export declare class CompressionError extends Error {
  */
 export declare class UnsupportedEncodingError extends CompressionError {
     readonly kind: "UnsupportedEncodingError";
-    /** The unsupported content-encoding token. */
+    /** The unsupported content-encoding token — always known, by definition. */
     readonly encoding: string;
     constructor(encoding: string, options?: CompressionErrorOptions);
 }
@@ -27,9 +32,9 @@ export declare class UnsupportedEncodingError extends CompressionError {
  */
 export declare class DecompressionError extends CompressionError {
     readonly kind: "DecompressionError";
-    /** The content-encoding token being decoded when the failure happened. */
-    readonly encoding: string;
-    constructor(encoding: string, options?: CompressionErrorOptions);
+    /** The content-encoding token being decoded when the failure happened; undefined when unknown. */
+    readonly encoding: string | undefined;
+    constructor(encoding: string | undefined, options?: CompressionErrorOptions);
 }
 /**
  * Narrow an unknown thrown value to an Error. Preserves `cause` chains when
@@ -38,8 +43,9 @@ export declare class DecompressionError extends CompressionError {
 export declare function toError(e: unknown): Error;
 /**
  * Wrap an unknown thrown value as a typed {@link DecompressionError} for the
- * given encoding. Passes through any existing {@link CompressionError} so
- * double-wrapping never happens.
+ * given encoding, or with an unknown encoding when none is supplied. Passes
+ * through any existing {@link CompressionError} so double-wrapping never
+ * happens.
  */
-export declare function ensureCompressionError(e: unknown, encoding: string): CompressionError;
+export declare function ensureCompressionError(e: unknown, encoding?: string): CompressionError;
 //# sourceMappingURL=errors.d.ts.map

@@ -1,6 +1,6 @@
 {
     "name": "@browsercore/compression",
-    "version": "0.2.2",
+    "version": "0.2.3",
     "description": "Synchronous CompressionProvider contract (gzip, deflate, brotli) plus typed errors. HTTP layers call these methods — never node:zlib directly. Sync by design: async-native CompressionStream APIs cannot implement it.",
     "repository": {
         "type": "git",
@@ -35,7 +35,7 @@
         "clean": "rm -rf dist",
         "build": "tsc -p tsconfig.json",
         "prepublishOnly": "npm run clean && npm run build",
-        "typecheck": "tsc -p tsconfig.json --noEmit",
+        "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json --noEmit",
         "lint": "oxlint --type-aware src/",
         "test": "vitest run",
         "docs": "codedoc build"

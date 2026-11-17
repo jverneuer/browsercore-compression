@@ -10,6 +10,11 @@ import type { CompressionErrorOptions } from "./types.js";
 /** Base class for all compression errors. Provides `cause` + constructor. */
 export class CompressionError extends Error {
     public override readonly cause: Error | undefined;
+    /**
+     * The content-encoding token involved in the failure, when known.
+     * Subclasses that carry the encoding by definition set it to a string.
+     */
+    public readonly encoding?: string | undefined;
 
     constructor(message: string, options?: CompressionErrorOptions) {
         super(message, options);
@@ -24,8 +29,8 @@ export class CompressionError extends Error {
  */
 export class UnsupportedEncodingError extends CompressionError {
     public readonly kind = "UnsupportedEncodingError" as const;
-    /** The unsupported content-encoding token. */
-    public readonly encoding: string;
+    /** The unsupported content-encoding token — always known, by definition. */
+    public override readonly encoding: string;
 
     constructor(encoding: string, options?: CompressionErrorOptions) {
         super(`Unsupported content-encoding: ${encoding}`, options);
@@ -40,11 +45,11 @@ export class UnsupportedEncodingError extends CompressionError {
  */
 export class DecompressionError extends CompressionError {
     public readonly kind = "DecompressionError" as const;
-    /** The content-encoding token being decoded when the failure happened. */
-    public readonly encoding: string;
+    /** The content-encoding token being decoded when the failure happened; undefined when unknown. */
+    public override readonly encoding: string | undefined;
 
-    constructor(encoding: string, options?: CompressionErrorOptions) {
-        super(`Failed to decompress ${encoding} stream`, options);
+    constructor(encoding: string | undefined, options?: CompressionErrorOptions) {
+        super(`Failed to decompress ${encoding ?? "unknown"} stream`, options);
         this.encoding = encoding;
     }
 }
@@ -62,10 +67,11 @@ export function toError(e: unknown): Error {
 
 /**
  * Wrap an unknown thrown value as a typed {@link DecompressionError} for the
- * given encoding. Passes through any existing {@link CompressionError} so
- * double-wrapping never happens.
+ * given encoding, or with an unknown encoding when none is supplied. Passes
+ * through any existing {@link CompressionError} so double-wrapping never
+ * happens.
  */
-export function ensureCompressionError(e: unknown, encoding: string): CompressionError {
+export function ensureCompressionError(e: unknown, encoding?: string): CompressionError {
     if (e instanceof CompressionError) {
         return e;
     }
